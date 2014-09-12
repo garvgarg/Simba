@@ -62,7 +62,8 @@ public class LogFile {
     private static LogFile sLogFileInstance = null;
 
     /**
-     * Singleton that ensures that only one sLogFileInstance of the LogFile exists at any time
+     * Singleton that ensures that only one sLogFileInstance of the LogFile
+     * exists at any time
      */
     private LogFile(Context context) {
 
@@ -71,15 +72,15 @@ public class LogFile {
 
         // Open the shared preferences repository
         mPrefs = context.getSharedPreferences(ActivityUtils.SHARED_PREFERENCES,
-                 Context.MODE_PRIVATE);
+                Context.MODE_PRIVATE);
 
         // If it doesn't contain a file number, set the file number to 1
         if (!mPrefs.contains(ActivityUtils.KEY_LOG_FILE_NUMBER)) {
             mFileNumber = 1;
 
-        // Otherwise, get the last-used file number and increment it.
+            // Otherwise, get the last-used file number and increment it.
         } else {
-        	int fileNum = mPrefs.getInt(ActivityUtils.KEY_LOG_FILE_NUMBER, 0);
+            int fileNum = mPrefs.getInt(ActivityUtils.KEY_LOG_FILE_NUMBER, 0);
             mFileNumber = fileNum + 1;
         }
 
@@ -90,19 +91,18 @@ public class LogFile {
         editor.putInt(ActivityUtils.KEY_LOG_FILE_NUMBER, mFileNumber);
 
         // Create a timestamp
-        String dateString = new SimpleDateFormat("yyyy_MM_dd", Locale.US).format(new Date());
+        String dateString = new SimpleDateFormat("yyyy_MM_dd", Locale.US)
+                .format(new Date());
 
-        // Create the file name by sprintf'ing its parts into the filename string.
-        mFileName = context.getString(
-                R.string.log_filename,
-                ActivityUtils.LOG_FILE_NAME_PREFIX,
-                dateString,
-                mFileNumber++,
+        // Create the file name by sprintf'ing its parts into the filename
+        // string.
+        mFileName = context.getString(R.string.log_filename,
+                ActivityUtils.LOG_FILE_NAME_PREFIX, dateString, mFileNumber++,
                 ActivityUtils.LOG_FILE_NAME_SUFFIX);
 
         // Save the filename
         editor.putString(ActivityUtils.KEY_LOG_FILE_NAME, mFileName);
-        
+
         editor.commit();
 
         // Create the log file
@@ -110,18 +110,19 @@ public class LogFile {
     }
 
     /**
-     * Create an sLogFileInstance of log file, or return the current sLogFileInstance
+     * Create an sLogFileInstance of log file, or return the current
+     * sLogFileInstance
      */
     public static LogFile getInstance(Context context) {
 
         if (sLogFileInstance == null) {
 
-        	sLogFileInstance = new LogFile(context);
-        
+            sLogFileInstance = new LogFile(context);
+
         }
-        
+
         return sLogFileInstance;
-    
+
     }
 
     /**
@@ -159,8 +160,8 @@ public class LogFile {
         String line;
 
         /*
-         * Read until end-of-file from the log file, and store the input line as a
-         * spanned string in the List
+         * Read until end-of-file from the log file, and store the input line as
+         * a spanned string in the List
          */
         while ((line = reader.readLine()) != null) {
             content.add(new SpannedString(line));
@@ -183,17 +184,17 @@ public class LogFile {
 
             // If the writer is still open, close it
             if (mActivityWriter != null) {
-    
-            	mActivityWriter.close();
-            
+
+                mActivityWriter.close();
+
             }
 
             // Create a new writer for the log file
             mActivityWriter = new PrintWriter(new FileWriter(mLogFile, true));
 
-        // If an IO exception occurs, print a stack trace
+            // If an IO exception occurs, print a stack trace
         } catch (IOException e) {
-                e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -211,7 +212,8 @@ public class LogFile {
             if (!file.delete()) {
 
                 // Log the file's name
-                Log.e(ActivityUtils.APPTAG, file.getAbsolutePath() + " : " + file.getName());
+                Log.e(ActivityUtils.APPTAG, file.getAbsolutePath() + " : "
+                        + file.getName());
 
                 // Note that not all files were removed
                 removed = false;
@@ -231,7 +233,8 @@ public class LogFile {
         File newFile = new File(mContext.getFilesDir(), filename);
 
         // Log the file name
-        Log.d(ActivityUtils.APPTAG, newFile.getAbsolutePath() + " : " + newFile.getName());
+        Log.d(ActivityUtils.APPTAG,
+                newFile.getAbsolutePath() + " : " + newFile.getName());
 
         // return the new file handle
         return newFile;

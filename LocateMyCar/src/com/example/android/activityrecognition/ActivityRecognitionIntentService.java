@@ -19,7 +19,6 @@ package com.example.android.activityrecognition;
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
 
-
 import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
@@ -36,11 +35,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Service that receives ActivityRecognition updates. It receives updates
- * in the background, even if the main Activity is not visible.
+ * Service that receives ActivityRecognition updates. It receives updates in the
+ * background, even if the main Activity is not visible.
  */
 
-public class ActivityRecognitionIntentService extends IntentService implements LocationListener{
+public class ActivityRecognitionIntentService extends IntentService implements
+        LocationListener {
 
     // Formats the timestamp in the log
     private static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd HH:mm:ss.SSSZ";
@@ -53,18 +53,18 @@ public class ActivityRecognitionIntentService extends IntentService implements L
 
     // Store the app's shared preferences repository
     private SharedPreferences mPrefs;
-    
-    // Represents strength of vehicle mode  
-    private static int vehicle_mode_weight = 0; 
-   
+
+    // Represents strength of vehicle mode
+    private static int vehicle_mode_weight = 0;
+
     // Represents strength of walking mode
-    private static int onFoot_mode_weight = 0; 
-    
+    private static int onFoot_mode_weight = 0;
+
     public ActivityRecognitionIntentService() {
         // Set the label for the service's background thread
         super("ActivityRecognitionIntentService");
         System.out.println("Intent Activity initiated");
-        
+
     }
 
     /**
@@ -72,10 +72,10 @@ public class ActivityRecognitionIntentService extends IntentService implements L
      */
     @Override
     protected void onHandleIntent(Intent intent) {
-   
-    	// Get a handle to the repository
+
+        // Get a handle to the repository
         mPrefs = getApplicationContext().getSharedPreferences(
-                 ActivityUtils.SHARED_PREFERENCES, Context.MODE_PRIVATE);
+                ActivityUtils.SHARED_PREFERENCES, Context.MODE_PRIVATE);
 
         // Get a date formatter, and catch errors in the returned timestamp
         try {
@@ -84,7 +84,8 @@ public class ActivityRecognitionIntentService extends IntentService implements L
             Log.e(ActivityUtils.APPTAG, getString(R.string.date_format_error));
         }
 
-        // Format the timestamp according to the pattern, then localize the pattern
+        // Format the timestamp according to the pattern, then localize the
+        // pattern
         mDateFormat.applyPattern(DATE_FORMAT_PATTERN);
         mDateFormat.applyLocalizedPattern(mDateFormat.toLocalizedPattern());
 
@@ -92,10 +93,13 @@ public class ActivityRecognitionIntentService extends IntentService implements L
         if (ActivityRecognitionResult.hasResult(intent)) {
 
             // Get the update
-            ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
+            ActivityRecognitionResult result = ActivityRecognitionResult
+                    .extractResult(intent);
 
-            // Get the most probable activity from the list of activities in the update
-            DetectedActivity mostProbableActivity = result.getMostProbableActivity();
+            // Get the most probable activity from the list of activities in the
+            // update
+            DetectedActivity mostProbableActivity = result
+                    .getMostProbableActivity();
 
             // Get the confidence percentage for the most probable activity
             int confidence = mostProbableActivity.getConfidence();
@@ -103,132 +107,144 @@ public class ActivityRecognitionIntentService extends IntentService implements L
             // Get the type of activity
             int activityType = mostProbableActivity.getType();
 
-        	// Get the previous type, otherwise return the "unknown" type
-            int previousType = mPrefs.getInt(ActivityUtils.KEY_PREVIOUS_ACTIVITY_TYPE,
+            // Get the previous type, otherwise return the "unknown" type
+            int previousType = mPrefs.getInt(
+                    ActivityUtils.KEY_PREVIOUS_ACTIVITY_TYPE,
                     DetectedActivity.UNKNOWN);
-            
+
             String timeStamp = mDateFormat.format(new Date());
-    
-            //If confidence is greater than 70 store the activity                
-            if (confidence >= 70) {            	
-            	// Store the type
+
+            // If confidence is greater than 70 store the activity
+            if (confidence >= 70) {
+                // Store the type
                 Editor editor = mPrefs.edit();
-                
-                editor.putInt(ActivityUtils.KEY_PREVIOUS_ACTIVITY_TYPE, activityType);
-                
-                editor.commit();                
+
+                editor.putInt(ActivityUtils.KEY_PREVIOUS_ACTIVITY_TYPE,
+                        activityType);
+
+                editor.commit();
             }
-            
-            if (activityType == DetectedActivity.STILL && (confidence >= 70) &&                    
-            //if (activityType == DetectedActivity.IN_VEHICLE && (confidence >= 70) &&
+
+            if (activityType == DetectedActivity.STILL && (confidence >= 70) &&
+            // if (activityType == DetectedActivity.IN_VEHICLE && (confidence >=
+            // 70) &&
                     (vehicle_mode_weight < 100)) {
-            	
-            		// Clear coordinates on map as soon user is in vehicle mode
-            		if (vehicle_mode_weight == 0) {
-            			System.out.println("Request send to reset Map");
-            	
-            			Intent resetMap = new Intent(ActivityUtils.RESET_MAP);
-            			
-            			resetMap.putExtra("Reset Map", true); 
-            			
-            			LocalBroadcastManager.getInstance(this).sendBroadcast(resetMap);
-            		}
-            	
-                 	++vehicle_mode_weight;
-                 	
-                 	onFoot_mode_weight = 0;
-                 	
-                    LogFile.getInstance(getApplicationContext()).log(
-                    	timeStamp +
-                        LOG_DELIMITER + "In Vehicle Activity " + getNameFromType(activityType) 
-                        + " " + vehicle_mode_weight);                    
-            }
-            
-            if (activityType == DetectedActivity.TILTING && (confidence >= 50) && 
-            //if (activityType == DetectedActivity.ON_FOOT && (confidence >= 40) &&
-                    (onFoot_mode_weight < 100)) {                	
-            	++onFoot_mode_weight;
-            	
+
+                // Clear coordinates on map as soon user is in vehicle mode
+                if (vehicle_mode_weight == 0) {
+                    System.out.println("Request send to reset Map");
+
+                    Intent resetMap = new Intent(ActivityUtils.RESET_MAP);
+
+                    resetMap.putExtra("Reset Map", true);
+
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(
+                            resetMap);
+                }
+
+                ++vehicle_mode_weight;
+
+                onFoot_mode_weight = 0;
+
                 LogFile.getInstance(getApplicationContext()).log(
-                	timeStamp +
-                    LOG_DELIMITER + "On Foot Activity " + getNameFromType(activityType) 
-                    + " " + onFoot_mode_weight);
-                    
+                        timeStamp + LOG_DELIMITER + "In Vehicle Activity "
+                                + getNameFromType(activityType) + " "
+                                + vehicle_mode_weight);
             }
-           
+
+            if (activityType == DetectedActivity.TILTING && (confidence >= 50)
+                    &&
+                    // if (activityType == DetectedActivity.ON_FOOT &&
+                    // (confidence >= 40) &&
+                    (onFoot_mode_weight < 100)) {
+                ++onFoot_mode_weight;
+
+                LogFile.getInstance(getApplicationContext()).log(
+                        timeStamp + LOG_DELIMITER + "On Foot Activity "
+                                + getNameFromType(activityType) + " "
+                                + onFoot_mode_weight);
+
+            }
+
             if ((confidence >= 50) && (activityType != previousType)) {
-            
-            	// Get the current log file or create a new one, then log the activity
-            	LogFile.getInstance(getApplicationContext()).log(
-                    timeStamp +
-                    LOG_DELIMITER + " Activity changed " + 
-                    getNameFromType(previousType)+ " to " + getNameFromType(activityType));
-            }
-                
-            if ((onFoot_mode_weight >= 1) && (vehicle_mode_weight >= 1)) {
-            	
-            	vehicle_mode_weight = 0;
-            	
-            	onFoot_mode_weight = 0;
-            
-                // Get the current log file or create a new one, then log the activity
+
+                // Get the current log file or create a new one, then log the
+                // activity
                 LogFile.getInstance(getApplicationContext()).log(
-                    timeStamp +
-                    LOG_DELIMITER + "CAR IS PARKED. GPS COORDINATES ARE COLLECTED.");
-                
+                        timeStamp + LOG_DELIMITER + " Activity changed "
+                                + getNameFromType(previousType) + " to "
+                                + getNameFromType(activityType));
+            }
+
+            if ((onFoot_mode_weight >= 1) && (vehicle_mode_weight >= 1)) {
+
+                vehicle_mode_weight = 0;
+
+                onFoot_mode_weight = 0;
+
+                // Get the current log file or create a new one, then log the
+                // activity
+                LogFile.getInstance(getApplicationContext())
+                        .log(timeStamp
+                                + LOG_DELIMITER
+                                + "CAR IS PARKED. GPS COORDINATES ARE COLLECTED.");
+
                 System.out.println("Request send to Capture Car Location");
-                
-                Intent getCarLocation = new Intent(ActivityUtils.GET_CAR_lOCATION);
-                
-                getCarLocation.putExtra("Get_Coordinates", true); 
-                
-                LocalBroadcastManager.getInstance(this).sendBroadcast(getCarLocation);
-                
-             }
+
+                Intent getCarLocation = new Intent(
+                        ActivityUtils.GET_CAR_lOCATION);
+
+                getCarLocation.putExtra("Get_Coordinates", true);
+
+                LocalBroadcastManager.getInstance(this).sendBroadcast(
+                        getCarLocation);
+
+            }
         }
     }
-    
+
     /**
      * Map detected activity types to strings
-     *
-     * @param activityType The detected activity type
+     * 
+     * @param activityType
+     *            The detected activity type
      * @return A user-readable name for the type
      */
     private String getNameFromType(int activityType) {
-        switch(activityType) {
-            case DetectedActivity.IN_VEHICLE:
-                return "in_vehicle";
-            case DetectedActivity.ON_BICYCLE:
-                return "on_bicycle";
-            case DetectedActivity.ON_FOOT:
-                return "on_foot";
-            case DetectedActivity.STILL:
-                return "still";
-            case DetectedActivity.UNKNOWN:
-                return "unknown";
-            case DetectedActivity.TILTING:
-                return "tilting";
+        switch (activityType) {
+        case DetectedActivity.IN_VEHICLE:
+            return "in_vehicle";
+        case DetectedActivity.ON_BICYCLE:
+            return "on_bicycle";
+        case DetectedActivity.ON_FOOT:
+            return "on_foot";
+        case DetectedActivity.STILL:
+            return "still";
+        case DetectedActivity.UNKNOWN:
+            return "unknown";
+        case DetectedActivity.TILTING:
+            return "tilting";
         }
         return "unknown";
     }
-    
+
     @Override
-	public void onProviderDisabled(String provider) {
-		// TODO Auto-generated method stub		
-	}
+    public void onProviderDisabled(String provider) {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public void onProviderEnabled(String provider) {
-		// TODO Auto-generated method stub		
-	}
+    @Override
+    public void onProviderEnabled(String provider) {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public void onStatusChanged(String provider, int status, Bundle extras) {
-		// TODO Auto-generated method stub		
-	}
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+        // TODO Auto-generated method stub
+    }
 
-	@Override
-	public void onLocationChanged(Location location) {
-		// TODO Auto-generated method stub
-	}	
+    @Override
+    public void onLocationChanged(Location location) {
+        // TODO Auto-generated method stub
+    }
 }
